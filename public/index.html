@@ -1,5 +1,6 @@
 
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -46,7 +47,7 @@
 </form>
 </div>
 <h3 class="clients-total" id="clients-total"> </h3>
-<script>
+<!-- <script>
     document.addEventListener('DOMContentLoaded', function () {
     const socket = io();
     const messageContainer = document.getElementById('message-container');
@@ -149,7 +150,107 @@
     });
 });
 
+</script> -->
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        // Use the deployed server's URL (replace 'http://localhost:4000' with your deployed server's URL)
+        const socket = io(window.location.origin); // Automatically picks the current domain
+
+        const messageContainer = document.getElementById('message-container');
+        const nameInput = document.getElementById('name-input');
+        let messageForm = document.getElementById('message-form');
+        let messageInput = document.getElementById('message-input');
+        let totalClients = document.getElementById('clients-total');
+
+        if (!messageForm) {
+            console.error('Element with id "message-form" not found');
+        } else {
+            messageForm.addEventListener('submit', handleSubmit);
+        }
+
+        function handleSubmit(e) {
+            e.preventDefault();
+            sendMessage();
+        }
+
+        function sendMessage() {
+            if (messageInput.value === '') {
+                return;
+            }
+            const data = {
+                name: nameInput.value,
+                message: messageInput.value,
+                dateTime: new Date()
+            };
+            socket.emit('message', data);
+            addMessageToUI(true, data);
+            messageInput.value = '';
+        }
+
+        socket.on('chat-message', (data) => {
+            addMessageToUI(false, data);
+        });
+
+        function addMessageToUI(isOwnMessage, data) {
+            const formattedDateTime = moment(data.dateTime).fromNow();
+            const element = `
+                <li class="${isOwnMessage ? "message-right" : "message-left"}">
+                    <p class="message">
+                        ${data.message}
+                        <span>${data.name} ⚪ ${formattedDateTime}</span>
+                    </p>
+                </li>
+            `;
+            messageContainer.innerHTML += element;
+            scrollToBottom();
+        }
+
+        function scrollToBottom() {
+            messageContainer.scroll(0, messageContainer.scrollHeight);
+        }
+
+        if (messageInput) {
+            messageInput.addEventListener('focus', handleFocus);
+            messageInput.addEventListener('keypress', handleKeypress);
+            messageInput.addEventListener('blur', handleBlur);
+        }
+
+        function handleFocus() {
+            socket.emit('feedback', {
+                feedback: `✍${nameInput.value} is typing`
+            });
+        }
+
+        function handleKeypress() {
+            socket.emit('feedback', {
+                feedback: `✍${nameInput.value} is typing`
+            });
+        }
+
+        function handleBlur() {
+            socket.emit('feedback', {
+                feedback: ''
+            });
+        }
+
+        socket.on('feedback', (data) => {
+            const feedbackElement = document.getElementById('feedback');
+            if (feedbackElement) {
+                feedbackElement.innerText = data.feedback;
+            }
+        });
+
+        socket.on('client-total', (data) => {
+            if (totalClients) {
+                totalClients.innerText = `Total Clients: ${data}`;
+            }
+        });
+    });
 </script>
+
+
+
 
 </body>
 
